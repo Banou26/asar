@@ -60,9 +60,6 @@ export {
 //   .then(v => console.log(v.toString()))
 
 // listPackage(packedPkg).then(v => console.log(v))
-// packedPkg
-//   .arrayBuffer()
-//   .then(buff => console.log(listPackage(readArchiveHeaderSync(buff).header)))
 
 // extractAll(new Blob([Buffer.from(base64Pkg, 'base64')])).then(v =>
 //   console.log(
