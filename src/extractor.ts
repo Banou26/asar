@@ -58,9 +58,11 @@ export const extractFile = async (archive: FileData, pathname: string) => {
   return Buffer.from(buffer, 8 + headerSize + Number(offset), size)
 }
 
-export const listPackage = async (archive: FileData) => {
-  const buffer = await getArrayBuffer(archive)
-  const header = readArchiveHeaderSync(buffer).header
+export const listPackage = async (archive: FileData, isHeader = false) => {
+  const header =
+    isHeader
+      ? archive
+      : readArchiveHeaderSync(await getArrayBuffer(archive)).header
   const files: string[] = []
 
   const fillFilesFromMetadata = function (basePath: string, metadata: DirectoryMetadata) {
@@ -79,18 +81,17 @@ export const listPackage = async (archive: FileData) => {
   return files
 }
 
-export const extractAll = async (archive: FileData) => {
+export const extractAll = async (archive: FileData): Promise<{ [key: string]: FileData }> => {
   const buffer = await getArrayBuffer(archive)
 
   return (
     Object.fromEntries(
       await Promise.all(
-        (await listPackage(
-          readArchiveHeaderSync(buffer).header
-        )).map(async (path: string) => [
-          path,
-          await extractFile(buffer, path)
-        ])
+        (await listPackage(readArchiveHeaderSync(buffer).header, true))
+          .map(async (path: string) => [
+            path,
+            await extractFile(buffer, path)
+          ])
       )
     )
   )
