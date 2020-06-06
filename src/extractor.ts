@@ -51,14 +51,14 @@ const readArchiveHeaderSync = (archiveArrayBuffer: ArrayBuffer) => {
 
 const getArrayBuffer = (data: FileData) => new Blob([data]).arrayBuffer()
 
-export const getFile = async (archive: FileData, pathname: string) => {
+export const extractFile = async (archive: FileData, pathname: string) => {
   const buffer = await getArrayBuffer(archive)
   const { header, headerSize} = readArchiveHeaderSync(buffer)
   const { offset, size } = <FileMetadata>searchNodeFromPath(header, pathname)
   return Buffer.from(buffer, 8 + headerSize + Number(offset), size)
 }
 
-export const listFiles = async (archive: FileData) => {
+export const listPackage = async (archive: FileData) => {
   const buffer = await getArrayBuffer(archive)
   const header = readArchiveHeaderSync(buffer).header
   const files: string[] = []
@@ -85,11 +85,11 @@ export const extractAll = async (archive: FileData) => {
   return (
     Object.fromEntries(
       await Promise.all(
-        (await listFiles(
+        (await listPackage(
           readArchiveHeaderSync(buffer).header
         )).map(async (path: string) => [
           path,
-          await getFile(buffer, path)
+          await extractFile(buffer, path)
         ])
       )
     )

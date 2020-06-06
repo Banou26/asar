@@ -1,12 +1,12 @@
 // import { Buffer } from 'buffer'
 
 import { createPackage } from './packager.ts'
-import { getFile, listFiles, extractAll } from './extractor.ts'
+import { listPackage, extractFile, extractAll } from './extractor.ts'
 
 export {
   createPackage,
-  getFile,
-  listFiles,
+  listPackage,
+  extractFile,
   extractAll
 }
 
@@ -56,13 +56,13 @@ export {
 // 1dXV4Zm9vIGJhciBiYXogYWFhYQ==`
 // const packedPkg = new Blob([Buffer.from(base64Pkg, 'base64')])
 
-// getFile(packedPkg, '/New folder/foo.txt')
+// extractFile(packedPkg, '/New folder/foo.txt')
 //   .then(v => console.log(v.toString()))
 
-// listFiles(packedPkg).then(v => console.log(v))
+// listPackage(packedPkg).then(v => console.log(v))
 // packedPkg
 //   .arrayBuffer()
-//   .then(buff => console.log(listFiles(readArchiveHeaderSync(buff).header)))
+//   .then(buff => console.log(listPackage(readArchiveHeaderSync(buff).header)))
 
 // extractAll(new Blob([Buffer.from(base64Pkg, 'base64')])).then(v =>
 //   console.log(
