@@ -90,7 +90,7 @@ const makeFilesBuffer = (files: UnpackedFiles): Buffer[] =>
       )
     ], [])
 
-type createPackage = (files: UnpackedFiles) => Object
+type createPackage = (files: UnpackedFiles) => Buffer
 
 export const createPackage: createPackage = async (files) => {
   const header = makeHeader(files)
