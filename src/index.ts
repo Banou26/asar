@@ -22,7 +22,7 @@ export {
 //   link.click();
 // };
 
-// createPackageFromFiles({
+// createPackage({
 //   'New folder': {
 //     'foo.txt': 'foo bar baz aaaa',
 //     'bar.txt': 'qux quux quuux'
@@ -32,7 +32,7 @@ export {
 // }).then(v => console.log(saveByteArray('packed', v)))
 
 // console.log(
-//   createPackageFromFiles({
+//   createPackage({
 //     'New folder': {
 //       'foo.txt': 'foo bar baz aaaa',
 //       'bar.txt': 'qux quux quuux'
