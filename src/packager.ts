@@ -1,3 +1,4 @@
+import path from 'path'
 import { Buffer } from 'buffer'
 
 import { createEmpty } from './pickle.ts'
@@ -7,12 +8,22 @@ import {
   FileMetadata,
   DirectoryMetadata
 } from './types.ts'
+import { isDirectory, isDirectoryMetadata } from './utils.ts'
 
-const isDirectory = (val: any) => !!val && typeof val === 'object'
+const makeFlatTree = (files: UnpackedFiles): UnpackedFiles => {
+  const tree: UnpackedFiles = {}
 
-const isDirectoryMetadata= (val: any) =>
-  isDirectory(val)
-  && isDirectory((<DirectoryMetadata>val).files)
+  for (const [key, val] of Object.entries(files)) {
+    let currDir = tree
+    const dirs = key.split(path.sep).filter(Boolean)
+    const filename = <string>dirs.pop()
+    for (const dir of dirs) {
+      currDir = <UnpackedFiles>(currDir[dir] = currDir[dir] ?? {})
+    }
+    currDir[filename] = val
+  }
+  return <UnpackedDirectory>tree
+}
 
 const makeHeaderTree = (files: UnpackedFiles): UnpackedDirectory => 
   Object
@@ -27,7 +38,7 @@ const makeHeaderTree = (files: UnpackedFiles): UnpackedDirectory =>
       }
     }), { files: {} })
 
-const makeTreeSize = (tree: UnpackedDirectory): DirectoryMetadata =>
+const makeSizeTree = (tree: UnpackedDirectory): DirectoryMetadata =>
   Object
     .entries(tree.files)
     .reduce(({ files }, [key, value]) => ({
@@ -35,19 +46,19 @@ const makeTreeSize = (tree: UnpackedDirectory): DirectoryMetadata =>
         ...files,
         [key]:
           isDirectoryMetadata(value)
-            ? makeTreeSize(<UnpackedDirectory>value)
+            ? makeSizeTree(<UnpackedDirectory>value)
             : { size: (<any>value)?.length }
       }
     }), { files: {} })
 
-const makeTreeOffset = (tree: DirectoryMetadata): DirectoryMetadata => {
-  const makeInnerTreeOffset = (tree: DirectoryMetadata, offset: string): [DirectoryMetadata, string] =>
+const makeOffsetTree = (tree: DirectoryMetadata): DirectoryMetadata => {
+  const makeInnerOffsetTree = (tree: DirectoryMetadata, offset: string): [DirectoryMetadata, string] =>
     Object
       .entries(tree.files)
       .reduce<[DirectoryMetadata, string]>(([{ files }, offset], [key, value]) => {
         const [newValue, newOffset] =
           isDirectoryMetadata(value)
-            ? makeInnerTreeOffset(<DirectoryMetadata>value, offset)
+            ? makeInnerOffsetTree(<DirectoryMetadata>value, offset)
             : [
               {
                 size: (<FileMetadata>value).size || 0,
@@ -67,12 +78,12 @@ const makeTreeOffset = (tree: DirectoryMetadata): DirectoryMetadata => {
         ]
       }, [{ files: {} }, offset || "0"])
 
-  return makeInnerTreeOffset(tree, '0')[0]
+  return makeInnerOffsetTree(tree, '0')[0]
 }
 
 const makeHeader = (files: UnpackedFiles): DirectoryMetadata =>
-  makeTreeOffset(
-    makeTreeSize(
+  makeOffsetTree(
+    makeSizeTree(
       makeHeaderTree(files)
     )
   )
@@ -90,10 +101,8 @@ const makeFilesBuffer = (files: UnpackedFiles): Buffer[] =>
       )
     ], [])
 
-type createPackage = (files: UnpackedFiles) => Buffer
-
-export const createPackage: createPackage = async (files) => {
-  const header = makeHeader(files)
+export const createPackage = async (files: UnpackedFiles, { flat = false } = {}): Promise<Buffer> => {
+  const header = makeHeader(flat ? makeFlatTree(files) : files)
   const headerPickle = createEmpty()
   headerPickle.writeString(JSON.stringify(header))
   const headerBuf = headerPickle.toBuffer()
