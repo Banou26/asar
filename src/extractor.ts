@@ -1,8 +1,9 @@
+import type { FileData, DirectoryMetadata, FileMetadata, Metadata } from './types'
+
 import path from 'path'
 import { Buffer } from 'buffer'
 
 import { createFromBuffer } from './pickle'
-import { FileData, DirectoryMetadata, FileMetadata, Metadata } from './types'
 import { isDirectoryMetadata } from './utils'
 
 const searchNodeFromDirectory = (header: Metadata, p: string) => {

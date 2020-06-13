@@ -1,13 +1,10 @@
+
+import type { UnpackedFiles, UnpackedDirectory, FileMetadata, DirectoryMetadata } from './types'
+
 import path from 'path'
 import { Buffer } from 'buffer'
 
 import { createEmpty } from './pickle'
-import {
-  UnpackedFiles,
-  UnpackedDirectory,
-  FileMetadata,
-  DirectoryMetadata
-} from './types'
 import { isDirectory, isDirectoryMetadata } from './utils'
 
 const makeFlatTree = (files: UnpackedFiles): UnpackedFiles => {

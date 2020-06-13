@@ -4,10 +4,10 @@
   "main": "src/index.ts",
   "license": "MIT",
   "scripts": {
-    "dev": "parcel src/index.html"
+    "dev": "parcel test/index.html"
   },
   "devDependencies": {
-    "parcel": "^2.0.0-alpha.3.2"
+    "parcel": "^2.0.0-nightly.288"
   },
   "dependencies": {
     "buffer": "^5.6.0",
