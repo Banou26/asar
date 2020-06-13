@@ -1,6 +1,13 @@
 {
+  "include": [
+    "src/**/*"
+  ],
   "compilerOptions": {
     "jsx": "react",
-    "lib": ["DOM", "ESNext"]
+    "lib": ["DOM", "ESNext"],
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "sourceMap": true,
+    "module": "ESNext"
   }
 }

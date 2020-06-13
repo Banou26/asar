@@ -94,7 +94,7 @@ const makeFilesBuffer = (files: UnpackedFiles): Buffer[] =>
         && typeof value === 'object'
         && value?.constructor === Object
           ? makeFilesBuffer(<UnpackedFiles>value)
-          : [Buffer.from(value)]
+          : [Buffer.from([value])]
       )
     ], [])
 
