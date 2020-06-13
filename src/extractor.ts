@@ -1,9 +1,9 @@
 import path from 'path'
 import { Buffer } from 'buffer'
 
-import { createFromBuffer } from './pickle.ts'
-import { FileData, DirectoryMetadata, FileMetadata, Metadata } from './types.ts'
-import { isDirectoryMetadata } from './utils.ts'
+import { createFromBuffer } from './pickle'
+import { FileData, DirectoryMetadata, FileMetadata, Metadata } from './types'
+import { isDirectoryMetadata } from './utils'
 
 const searchNodeFromDirectory = (header: Metadata, p: string) => {
   let json = header

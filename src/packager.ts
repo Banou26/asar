@@ -1,14 +1,14 @@
 import path from 'path'
 import { Buffer } from 'buffer'
 
-import { createEmpty } from './pickle.ts'
+import { createEmpty } from './pickle'
 import {
   UnpackedFiles,
   UnpackedDirectory,
   FileMetadata,
   DirectoryMetadata
-} from './types.ts'
-import { isDirectory, isDirectoryMetadata } from './utils.ts'
+} from './types'
+import { isDirectory, isDirectoryMetadata } from './utils'
 
 const makeFlatTree = (files: UnpackedFiles): UnpackedFiles => {
   const tree: UnpackedFiles = {}

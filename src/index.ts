@@ -1,7 +1,7 @@
 // import { Buffer } from 'buffer'
 
-import { createPackage } from './packager.ts'
-import { listPackage, extractFile, extractAll } from './extractor.ts'
+import { createPackage } from './packager'
+import { listPackage, extractFile, extractAll } from './extractor'
 
 export {
   createPackage,

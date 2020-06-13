@@ -1,4 +1,4 @@
-import { DirectoryMetadata } from './types.ts'
+import { DirectoryMetadata } from './types'
 
 export const isDirectory = (val: any) => !!val && typeof val === 'object'
 
