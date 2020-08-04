@@ -1,11 +1,11 @@
 {
   "name": "asar",
   "version": "0.0.1",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
     "dev": "parcel test/index.html",
-    "build": "tsc"
+    "build": "tsc --outDir dist"
   },
   "devDependencies": {
     "@types/node": "^14.0.13",
