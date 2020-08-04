@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "@types/node": "^14.0.13",
-    "parcel": "^2.0.0-nightly.288",
+    "parcel": "^2.0.0-nightly.357",
     "typescript": "^3.9.5"
   },
   "dependencies": {
