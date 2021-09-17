@@ -8,8 +8,9 @@
     "dev": "parcel --target browsert test/index.html",
     "dev2": "parcel watch --target nodet test/node.ts",
     "rd": "nodemon ./dist/node.js",
-    "build": "tsc --outDir dist"
+    "build": "parcel build --target main src/index.ts && tsc --outDir dist"
   },
+  "files": ["dist"],
   "devDependencies": {
     "@types/node": "^16.9.2",
     "concurrently": "^6.2.1",

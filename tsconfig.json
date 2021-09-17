@@ -7,6 +7,7 @@
     "allowSyntheticDefaultImports": true,
     "declaration": true,
     "sourceMap": true,
-    "module": "ESNext"
+    "module": "ESNext",
+    "emitDeclarationOnly": true
   }
 }
