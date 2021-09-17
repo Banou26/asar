@@ -18,11 +18,10 @@ const searchNodeFromDirectory = (header: Metadata, p: string) => {
 }
 
 const searchNodeFromPath = (header: DirectoryMetadata, p: string) => {
-  p = path.relative('', p)
+  p = p.replace(/^\//, '')
   if (!p) { return header }
   const name = path.basename(p)
   const node = <DirectoryMetadata>searchNodeFromDirectory(header, path.dirname(p))
-  console.log(node, header, p)
   if (node.files === null) {
     node.files = {}
   }

@@ -20,7 +20,7 @@ J9LCJOZXcgZm9sZGVyIjp7ImZpbGVzIjp7ImJhci50eHQiOnsic2l6ZSI6MTQsI\
 m9mZnNldCI6IjMwIn0sImZvby50eHQiOnsic2l6ZSI6MTYsIm9mZnNldCI6IjQ0\
 In19fX19AHF1eCBxdXV4IHF1dXV4Zm9vIGJhciBiYXogYWFhYXF1eCBxdXV4IHF\
 1dXV4Zm9vIGJhciBiYXogYWFhYQ==`
-const packedPkg = Buffer.from(base64Pkg, 'base64')
+const packedPkg = Uint8Array.from(Buffer.from(base64Pkg, 'base64')).buffer
 
 extractFile(packedPkg, '/New folder/foo.txt')
   .then(v => console.log(v.toString()))
