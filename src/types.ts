@@ -1,4 +1,4 @@
-export type FileData = NonNullable<ConstructorParameters<typeof Blob>[0]>[0]
+export type FileData = NonNullable<ConstructorParameters<typeof Blob>[0]>[0] | ArrayBuffer
 
 export interface UnpackedFiles {
   [key: string]: UnpackedFiles | FileData

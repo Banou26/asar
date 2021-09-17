@@ -1,18 +1,19 @@
 import { Buffer } from 'buffer'
 
 import { createPackage, listPackage, extractFile, extractAll } from '../src'
+import pkgUrl from 'url:./package.asar'
 
 // ? PACKAGING TEST CODE
 
-// function saveByteArray(reportName, byte) {
-//   // return byte
-//   var blob = new Blob([byte], {type: "application/asar"});
-//   var link = document.createElement('a');
-//   link.href = window.URL.createObjectURL(blob);
-//   var fileName = reportName;
-//   link.download = fileName;
-//   link.click();
-// };
+function saveByteArray(reportName, byte) {
+  // return byte
+  var blob = new Blob([byte], {type: "application/asar"});
+  var link = document.createElement('a');
+  link.href = window.URL.createObjectURL(blob);
+  var fileName = reportName;
+  link.download = fileName;
+  link.click();
+};
 
 // createPackage({
 //   'New folder': {
@@ -23,23 +24,26 @@ import { createPackage, listPackage, extractFile, extractAll } from '../src'
 //   'bar.txt': 'qux quux quuux'
 // }).then(v => console.log(saveByteArray('packed', v)))
 
-createPackage({
-  'New folder': {
-    'foo.txt': 'foo bar baz aaaa',
-    'bar.txt': 'qux quux quuux'
-  },
-  'foo.txt': 'foo bar baz aaaa',
-  'bar.txt': 'qux quux quuux'
-}).then(v => console.log(v))
+// createPackage({
+//   'New folder': {
+//     'foo.txt': 'foo bar baz aaaa',
+//     'bar.txt': 'qux quux quuux'
+//   },
+//   'foo.txt': 'foo bar baz aaaa',
+//   'bar.txt': 'qux quux quuux'
+// }).then(v => console.log(v))
 
-createPackage({
-  '/New folder/foo.txt': 'foo bar baz aaaa',
-  '/New folder/bar.txt': 'qux quux quuux',
-  '/foo.txt': 'foo bar baz aaaa',
-  '/bar.txt': 'qux quux quuux'
-}, { flat: true }).then(v => console.log(v))
+// createPackage({
+//   '/New folder/foo.txt': 'foo bar baz aaaa',
+//   '/New folder/bar.txt': 'qux quux quuux',
+//   '/foo.txt': 'foo bar baz aaaa',
+//   '/bar.txt': 'qux quux quuux'
+// }, { flat: true }).then(v => console.log(v))
 
-
+fetch(pkgUrl).then(res => res.arrayBuffer()).then(ab => {
+  extractFile(ab, '/background.js')
+    .then(v => console.log(new TextDecoder('utf-8').decode(v)))
+})
 
 //? EXTRACTING TEST CODE
 
@@ -53,22 +57,22 @@ In19fX19AHF1eCBxdXV4IHF1dXV4Zm9vIGJhciBiYXogYWFhYXF1eCBxdXV4IHF\
 const packedPkg = new Blob([Buffer.from(base64Pkg, 'base64')])
 
 extractFile(packedPkg, '/New folder/foo.txt')
-  .then(v => console.log(v.toString()))
+  .then(v => console.log(new TextDecoder('utf-8').decode(v)))
 
-listPackage(packedPkg).then(v => console.log(v))
-listPackage(packedPkg, { flat: true }).then(v => console.log(v))
+// listPackage(packedPkg).then(v => console.log(v))
+// listPackage(packedPkg, { flat: true }).then(v => console.log(v))
 
-const stringifyPackageValues = (v: Object): { [key: string]: string } =>
-  Object.fromEntries(
-    Object
-    .entries(v)
-    .map(([key, val]) => [
-      key,
-      typeof val === 'object' && val.constructor === Object
-        ? stringifyPackageValues(val)
-        : val.toString()
-    ])
-  )
+// const stringifyPackageValues = (v: Object): { [key: string]: string } =>
+//   Object.fromEntries(
+//     Object
+//     .entries(v)
+//     .map(([key, val]) => [
+//       key,
+//       typeof val === 'object' && val.constructor === Object
+//         ? stringifyPackageValues(val)
+//         : val.toString()
+//     ])
+//   )
 
-extractAll(packedPkg).then(v => console.log(stringifyPackageValues(v)))
-extractAll(packedPkg, { flat: true }).then(v => console.log(stringifyPackageValues(v)))
+// extractAll(packedPkg).then(v => console.log(stringifyPackageValues(v)))
+// extractAll(packedPkg, { flat: true }).then(v => console.log(stringifyPackageValues(v)))

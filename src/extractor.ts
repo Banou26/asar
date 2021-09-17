@@ -22,6 +22,7 @@ const searchNodeFromPath = (header: DirectoryMetadata, p: string) => {
   if (!p) { return header }
   const name = path.basename(p)
   const node = <DirectoryMetadata>searchNodeFromDirectory(header, path.dirname(p))
+  console.log(node, header, p)
   if (node.files === null) {
     node.files = {}
   }
@@ -51,13 +52,20 @@ const readArchiveHeaderSync = (archiveArrayBuffer: ArrayBuffer): { header: Direc
   }
 }
 
-const getArrayBuffer = (data: FileData) => new Blob([data]).arrayBuffer()
+const getArrayBuffer = (data: FileData) =>
+    data instanceof Buffer ? Promise.resolve(<ArrayBuffer>data.buffer)
+    : data instanceof ArrayBuffer ? Promise.resolve(data)
+    : new Blob([data]).arrayBuffer()
 
 export const extractFile = async (archive: FileData, pathname: string) => {
   const buffer = await getArrayBuffer(archive)
-  const { header, headerSize} = readArchiveHeaderSync(buffer)
-  const { offset, size } = <FileMetadata>searchNodeFromPath(header, pathname)
-  return Buffer.from(buffer, 8 + headerSize + Number(offset), size)
+  const size = new DataView(buffer).getUint32(4, true)
+  const headerSize = new DataView(buffer).getUint32(12, true)
+  const headerBuffer = buffer.slice(16, headerSize + 16)
+  const headerString = new TextDecoder('utf-8').decode(headerBuffer)
+  const header = JSON.parse(headerString)
+  const { offset, size: payloadSize } = <FileMetadata>searchNodeFromPath(header, pathname)
+  return buffer.slice(size + Number(offset) + 8, size + Number(offset) + payloadSize + 8)
 }
 
 interface listPackageReturn {

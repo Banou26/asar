@@ -3,17 +3,42 @@
   "version": "0.0.1",
   "main": "dist/index.js",
   "license": "MIT",
+  "type": "module",
   "scripts": {
-    "dev": "parcel test/index.html",
+    "dev": "parcel --target browsert test/index.html",
+    "dev2": "parcel watch --target nodet test/node.ts",
+    "rd": "nodemon ./dist/node.js",
     "build": "tsc --outDir dist"
   },
   "devDependencies": {
-    "@types/node": "^14.0.13",
+    "@types/node": "^16.9.2",
+    "concurrently": "^6.2.1",
+    "nodemon": "^2.0.12",
     "parcel": "^2.0.0-nightly.357",
     "typescript": "^3.9.5"
   },
   "dependencies": {
     "buffer": "^5.6.0",
     "path": "^0.12.7"
+  },
+  "browsert": "dist/browser.html",
+  "nodet": "dist/node.js",
+  "targets": {
+    "main": {
+      "isLibrary": true,
+      "outputFormat": "esmodule"
+    },
+    "browsert": {
+      "engines": {
+        "browsers": "Chrome 90"
+      }
+    },
+    "nodet": {
+      "engines": {
+        "node": ">= 16"
+      },
+      "isLibrary": true,
+      "outputFormat": "esmodule"
+    }
   }
 }

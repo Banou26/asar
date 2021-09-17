@@ -3,7 +3,6 @@
     "src/**/*"
   ],
   "compilerOptions": {
-    "jsx": "react",
     "lib": ["DOM", "ESNext"],
     "allowSyntheticDefaultImports": true,
     "declaration": true,
