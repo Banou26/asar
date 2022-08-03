@@ -6,13 +6,13 @@ import { Buffer } from 'buffer'
 import { createFromBuffer } from './pickle'
 import { isDirectoryMetadata } from './utils'
 
-interface ListPackageReturn {
+export interface ListPackageReturn {
   [key: string]: string | ListPackageReturn
 }
 
-type FullFileMetadata = Omit<FileMetadata, 'offset'> & { offset: number, path: string, fileOffset: number }
+export type FullFileMetadata = Omit<FileMetadata, 'offset'> & { offset: number, path: string, fileOffset: number }
 
-interface ListPackageMetadataReturn {
+export interface ListPackageMetadataReturn {
   [key: string]: FullFileMetadata | ListPackageMetadataReturn
 }
 
@@ -55,7 +55,7 @@ const listChilds = <T extends DirectoryMetadata | FileMetadata>(basePath: string
     ) as ListChildsReturnType<T>
     : basePath as ListChildsReturnType<T>
 
-type ListChildsMetadataReturnType<T> = T extends DirectoryMetadata ? ListPackageMetadataReturn : FullFileMetadata[]
+export type ListChildsMetadataReturnType<T> = T extends DirectoryMetadata ? ListPackageMetadataReturn : FullFileMetadata[]
 const listChildsMetadata = <T extends DirectoryMetadata | FileMetadata>(basePath: string, metadata: T, headerSize: number): ListChildsMetadataReturnType<T> =>
   isDirectoryMetadata(metadata)
     ? (
