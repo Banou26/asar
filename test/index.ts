@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer'
 
-import { createPackage, listPackage, extractFile, extractAll } from '../src'
+import { createPackage, listPackage, extractFile, extractAll, listPackageMetadata } from '../src'
 import pkgUrl from 'url:./package.asar'
 
 // ? PACKAGING TEST CODE
@@ -40,10 +40,10 @@ function saveByteArray(reportName, byte) {
 //   '/bar.txt': 'qux quux quuux'
 // }, { flat: true }).then(v => console.log(v))
 
-fetch(pkgUrl).then(res => res.arrayBuffer()).then(ab => {
-  extractFile(ab, '/background.js')
-    .then(v => console.log(new TextDecoder('utf-8').decode(v)))
-})
+// fetch(pkgUrl).then(res => res.arrayBuffer()).then(ab => {
+//   extractFile(ab, '/index.js')
+//     .then(v => console.log(new TextDecoder('utf-8').decode(v)))
+// })
 
 //? EXTRACTING TEST CODE
 
@@ -61,6 +61,18 @@ extractFile(packedPkg, '/New folder/foo.txt')
 
 // listPackage(packedPkg).then(v => console.log(v))
 // listPackage(packedPkg, { flat: true }).then(v => console.log(v))
+
+// listPackageMetadata(packedPkg).then(v => console.log(v))
+// listPackageMetadata(packedPkg, { flat: true }).then(v => console.log(v))
+
+fetch(pkgUrl).then(res => res.arrayBuffer()).then(ab => {
+  // listPackageMetadata(ab).then(v => console.log(v))
+  listPackageMetadata(ab, { flat: true }).then(v => {
+    const start = v.headerResult?.headerSize + 8
+    console.log(start, ab)
+    console.log(new TextDecoder('utf-8').decode(ab).slice(start, 100))
+  })
+})
 
 // const stringifyPackageValues = (v: Object): { [key: string]: string } =>
 //   Object.fromEntries(
