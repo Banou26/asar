@@ -12,6 +12,9 @@ interface ListPackageReturn {
 
 type FullFileMetadata = FileMetadata & { path: string }
 
+interface ListPackageMetadataReturn {
+  [key: string]: FullFileMetadata | ListPackageMetadataReturn
+}
 
 const flatListChild = (basePath: string, metadata: DirectoryMetadata): string[] =>
   Object
@@ -22,6 +25,18 @@ const flatListChild = (basePath: string, metadata: DirectoryMetadata): string[] 
         : path.join(basePath, key)
     )
 
+const flatListChildMetadata = (basePath: string, metadata: DirectoryMetadata): FullFileMetadata[] =>
+  Object
+    .entries(metadata.files)
+    .flatMap(([key, value]) =>
+      isDirectoryMetadata(value)
+        ? flatListChildMetadata(path.join(basePath, key), value)
+        : ({
+          path: path.join(basePath, key),
+          offset: (metadata.files[key] as FileMetadata).offset,
+          size: (metadata.files[key] as FileMetadata).size
+        })
+    )
 
 // WTF Typescript...
 type ListChildsReturnType<T> = T extends DirectoryMetadata ? ListPackageReturn : string
@@ -38,6 +53,21 @@ const listChilds = <T extends DirectoryMetadata | FileMetadata>(basePath: string
       )
     ) as ListChildsReturnType<T>
     : basePath as ListChildsReturnType<T>
+
+type ListChildsMetadataReturnType<T> = T extends DirectoryMetadata ? ListPackageMetadataReturn : string
+const listChildsMetadata = <T extends DirectoryMetadata | FileMetadata>(basePath: string, metadata: T): ListChildsMetadataReturnType<T> =>
+  isDirectoryMetadata(metadata)
+    ? (
+      Object.fromEntries(
+        Object
+          .entries(metadata.files)
+          .map(([key, value]) => [
+            key,
+            listChildsMetadata(path.join(basePath, key), value)
+          ])
+      )
+    ) as ListChildsMetadataReturnType<T>
+    : ({ path: basePath, offset: metadata.offset, size: metadata.size }) as unknown as ListChildsMetadataReturnType<T>
 
 const searchNodeFromDirectory = (header: Metadata, p: string) => {
   let json = header
@@ -123,7 +153,31 @@ export const listPackage =
     )
   }
 
+export const listPackageMetadata =
+  async <T extends ListPackageOptions>(archive: FileData | DirectoryMetadata, options?: T) => {
+    const headerResult =
+      options?.isHeader
+        ? undefined
+        : readArchiveHeaderSync(await getArrayBuffer(<FileData>archive))
+    const header =
+      options?.isHeader
+        ? <DirectoryMetadata>archive
+        : headerResult.header
+
+    return ({
+      headerResult,
+      files:
+        (
+          options?.flat
+            ? flatListChildMetadata('/', header)
+            : listChildsMetadata('/', header)
+        ) as (
+          T["flat"] extends true
+            ? string[]
+            : ListPackageReturn
         )
+    })
+  }
 
 interface extractPackageReturn {
   [key: string]: FileData | extractPackageReturn
