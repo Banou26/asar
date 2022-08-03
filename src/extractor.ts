@@ -10,7 +10,7 @@ interface ListPackageReturn {
   [key: string]: string | ListPackageReturn
 }
 
-type FullFileMetadata = FileMetadata & { path: string }
+type FullFileMetadata = Omit<FileMetadata, 'offset'> & { offset: number, path: string, fileOffset: number }
 
 interface ListPackageMetadataReturn {
   [key: string]: FullFileMetadata | ListPackageMetadataReturn
@@ -25,16 +25,17 @@ const flatListChild = (basePath: string, metadata: DirectoryMetadata): string[] 
         : path.join(basePath, key)
     )
 
-const flatListChildMetadata = (basePath: string, metadata: DirectoryMetadata): FullFileMetadata[] =>
+const flatListChildMetadata = (basePath: string, metadata: DirectoryMetadata, headerSize: number): FullFileMetadata[] =>
   Object
     .entries(metadata.files)
     .flatMap(([key, value]) =>
       isDirectoryMetadata(value)
-        ? flatListChildMetadata(path.join(basePath, key), value)
+        ? flatListChildMetadata(path.join(basePath, key), value, headerSize)
         : ({
           path: path.join(basePath, key),
-          offset: (metadata.files[key] as FileMetadata).offset,
-          size: (metadata.files[key] as FileMetadata).size
+          offset: Number((metadata.files[key] as FileMetadata).offset),
+          size: (metadata.files[key] as FileMetadata).size,
+          fileOffset: headerSize + 8 + Number((metadata.files[key] as FileMetadata).offset)
         })
     )
 
@@ -54,8 +55,8 @@ const listChilds = <T extends DirectoryMetadata | FileMetadata>(basePath: string
     ) as ListChildsReturnType<T>
     : basePath as ListChildsReturnType<T>
 
-type ListChildsMetadataReturnType<T> = T extends DirectoryMetadata ? ListPackageMetadataReturn : string
-const listChildsMetadata = <T extends DirectoryMetadata | FileMetadata>(basePath: string, metadata: T): ListChildsMetadataReturnType<T> =>
+type ListChildsMetadataReturnType<T> = T extends DirectoryMetadata ? ListPackageMetadataReturn : FullFileMetadata[]
+const listChildsMetadata = <T extends DirectoryMetadata | FileMetadata>(basePath: string, metadata: T, headerSize: number): ListChildsMetadataReturnType<T> =>
   isDirectoryMetadata(metadata)
     ? (
       Object.fromEntries(
@@ -63,11 +64,16 @@ const listChildsMetadata = <T extends DirectoryMetadata | FileMetadata>(basePath
           .entries(metadata.files)
           .map(([key, value]) => [
             key,
-            listChildsMetadata(path.join(basePath, key), value)
+            listChildsMetadata(path.join(basePath, key), value, headerSize)
           ])
       )
     ) as ListChildsMetadataReturnType<T>
-    : ({ path: basePath, offset: metadata.offset, size: metadata.size }) as unknown as ListChildsMetadataReturnType<T>
+    : ({
+      path: basePath,
+      offset: metadata.offset,
+      size: metadata.size,
+      fileOffset: headerSize + 8 + metadata.offset
+    }) as unknown as ListChildsMetadataReturnType<T>
 
 const searchNodeFromDirectory = (header: Metadata, p: string) => {
   let json = header
@@ -97,16 +103,21 @@ const searchNodeFromPath = (header: DirectoryMetadata, p: string) => {
 export const readArchiveHeaderSync = (archiveArrayBuffer: ArrayBuffer): { header: DirectoryMetadata, headerSize: number } => {
   // const view = new DataView(archiveArrayBuffer.slice(0, 8))
   // const size = view.getUint32(alignInt(4, SIZE_UINT32), true)
-  const size =
-    createFromBuffer(Buffer.from(archiveArrayBuffer.slice(0, 8)))
+
+  // todo: replace size with this impl using the dataview
+  const size = createFromBuffer(Buffer.from(archiveArrayBuffer.slice(0, 8)))
       .createIterator()
       .readUInt32()
+  // const size = new DataView(archiveArrayBuffer).getUint32(4, true)
 
   // todo: check if there is an easy way to replace Pickle with APIs like the DataView
   const header =
     createFromBuffer(Buffer.from(archiveArrayBuffer.slice(8, size + 8)))
       .createIterator()
       .readString()
+  // const headerSize = new DataView(archiveArrayBuffer).getUint32(8, true)
+  // const header = new TextDecoder('utf-8').decode(archiveArrayBuffer.slice(16, headerSize + 10))
+  // const header = new TextDecoder('utf-8').decode(archiveArrayBuffer.slice(16, size + 6))
 
   return {
     header: JSON.parse(header),
@@ -155,28 +166,24 @@ export const listPackage =
 
 export const listPackageMetadata =
   async <T extends ListPackageOptions>(archive: FileData | DirectoryMetadata, options?: T) => {
+    const buffer = options?.isHeader ? undefined : await getArrayBuffer(archive as FileData)
     const headerResult =
       options?.isHeader
         ? undefined
-        : readArchiveHeaderSync(await getArrayBuffer(<FileData>archive))
+        : readArchiveHeaderSync(buffer)
     const header =
       options?.isHeader
         ? <DirectoryMetadata>archive
         : headerResult.header
-
-    return ({
-      headerResult,
-      files:
-        (
-          options?.flat
-            ? flatListChildMetadata('/', header)
-            : listChildsMetadata('/', header)
-        ) as (
-          T["flat"] extends true
-            ? string[]
-            : ListPackageReturn
-        )
-    })
+    return (
+      options?.flat
+        ? flatListChildMetadata('/', header, headerResult.headerSize)
+        : listChildsMetadata('/', header, headerResult.headerSize)
+    ) as (
+      T["flat"] extends true
+        ? FullFileMetadata[]
+        : ListPackageReturn
+    )
   }
 
 interface extractPackageReturn {
