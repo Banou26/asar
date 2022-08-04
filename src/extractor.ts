@@ -1,9 +1,7 @@
 import type { FileData, DirectoryMetadata, FileMetadata, Metadata } from './types'
 
 import path from 'path'
-import { Buffer } from 'buffer'
 
-import { createFromBuffer } from './pickle'
 import { isDirectoryMetadata } from './utils'
 
 export interface ListPackageReturn {
@@ -101,24 +99,9 @@ const searchNodeFromPath = (header: DirectoryMetadata, p: string) => {
 }
 
 export const readArchiveHeaderSync = (archiveArrayBuffer: ArrayBuffer): { header: DirectoryMetadata, headerSize: number } => {
-  // const view = new DataView(archiveArrayBuffer.slice(0, 8))
-  // const size = view.getUint32(alignInt(4, SIZE_UINT32), true)
-
-  // todo: replace size with this impl using the dataview
-  const size = createFromBuffer(Buffer.from(archiveArrayBuffer.slice(0, 8)))
-      .createIterator()
-      .readUInt32()
-  // const size = new DataView(archiveArrayBuffer).getUint32(4, true)
-
-  // todo: check if there is an easy way to replace Pickle with APIs like the DataView
-  const header =
-    createFromBuffer(Buffer.from(archiveArrayBuffer.slice(8, size + 8)))
-      .createIterator()
-      .readString()
-  // const headerSize = new DataView(archiveArrayBuffer).getUint32(8, true)
-  // const header = new TextDecoder('utf-8').decode(archiveArrayBuffer.slice(16, headerSize + 10))
-  // const header = new TextDecoder('utf-8').decode(archiveArrayBuffer.slice(16, size + 6))
-
+  const size = new DataView(archiveArrayBuffer).getUint32(4, true)
+  const headerSize = new DataView(archiveArrayBuffer.slice(8, 16)).getInt32(4, true)
+  const header = new TextDecoder('utf-8').decode(archiveArrayBuffer.slice(16, 16 + headerSize))
   return {
     header: JSON.parse(header),
     headerSize: size
@@ -126,8 +109,7 @@ export const readArchiveHeaderSync = (archiveArrayBuffer: ArrayBuffer): { header
 }
 
 const getArrayBuffer = (data: FileData) =>
-    data instanceof Buffer ? Promise.resolve((data as Buffer).buffer)
-    : data instanceof ArrayBuffer ? Promise.resolve(data)
+    data instanceof ArrayBuffer ? Promise.resolve(data)
     : new Blob([data]).arrayBuffer()
 
 export const extractFile = async (archive: FileData, pathname: string) => {
