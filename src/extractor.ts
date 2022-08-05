@@ -16,24 +16,24 @@ type ListChildMetadataOptions<T extends boolean> = {
     T extends true
       ? DirectoryMetadata
       : DirectoryMetadata | FileMetadata
-  headerSize: number
+  filesOffset: number
 }
-const flatListChildMetadata = ({ basePath, metadata, headerSize }: ListChildMetadataOptions<true>): FullFileMetadata[] =>
+const flatListChildMetadata = ({ basePath, metadata, filesOffset }: ListChildMetadataOptions<true>): FullFileMetadata[] =>
   Object
     .entries(metadata.files)
     .flatMap(([key, value]) =>
       isDirectoryMetadata(value)
-        ? flatListChildMetadata({ basePath: path.join(basePath, key), metadata: value, headerSize })
+        ? flatListChildMetadata({ basePath: path.join(basePath, key), metadata: value, filesOffset })
         : ({
           path: path.join(basePath, key),
           offset: Number((metadata.files[key] as FileMetadata).offset),
           size: (metadata.files[key] as FileMetadata).size,
-          fileOffset: headerSize + 8 + Number((metadata.files[key] as FileMetadata).offset)
+          fileOffset: filesOffset + 8 + Number((metadata.files[key] as FileMetadata).offset)
         })
     )
 
 export type ListChildsNestedMetadataReturnType<T> = T extends DirectoryMetadata ? ListPackageMetadataReturn : FullFileMetadata[]
-const listChildsNestedMetadata = <T extends DirectoryMetadata | FileMetadata>({ basePath, metadata, headerSize }: ListChildMetadataOptions<false>): ListChildsNestedMetadataReturnType<T> =>
+const listChildsNestedMetadata = <T extends DirectoryMetadata | FileMetadata>({ basePath, metadata, filesOffset }: ListChildMetadataOptions<false>): ListChildsNestedMetadataReturnType<T> =>
   isDirectoryMetadata(metadata)
     ? (
       Object.fromEntries(
@@ -41,24 +41,24 @@ const listChildsNestedMetadata = <T extends DirectoryMetadata | FileMetadata>({ 
           .entries(metadata.files)
           .map(([key, value]) => [
             key,
-            listChildsNestedMetadata({ basePath: path.join(basePath, key), metadata: value, headerSize })
+            listChildsNestedMetadata({ basePath: path.join(basePath, key), metadata: value, filesOffset })
           ])
       )
     ) as ListChildsNestedMetadataReturnType<T>
     : ({
       path: basePath,
-      offset: metadata.offset,
+      offset: Number(metadata.offset),
       size: metadata.size,
-      fileOffset: headerSize + 8 + metadata.offset
+      fileOffset: filesOffset + 8 + metadata.offset
     }) as unknown as ListChildsNestedMetadataReturnType<T>
 
 const listChilds = <T extends boolean>(
-  { flat, header, headerSize }:
-  { flat: T, header: T extends true ? DirectoryMetadata : DirectoryMetadata | FileMetadata, headerSize: number }
+  { flat, header, filesOffset }:
+  { flat: T, header: T extends true ? DirectoryMetadata : DirectoryMetadata | FileMetadata, filesOffset: number }
 ) =>
   flat
-    ? flatListChildMetadata({ metadata: header as DirectoryMetadata, basePath: '/', headerSize })
-    : listChildsNestedMetadata({ metadata: header, basePath: '/', headerSize })
+    ? flatListChildMetadata({ metadata: header as DirectoryMetadata, basePath: '/', filesOffset })
+    : listChildsNestedMetadata({ metadata: header, basePath: '/', filesOffset })
 
 const searchNodeFromDirectory = (header: Metadata, p: string) => {
   let json = header
@@ -107,6 +107,8 @@ export const extractFile = async (archive: FileData, pathname: string) => {
   const headerString = new TextDecoder('utf-8').decode(headerBuffer)
   const header = JSON.parse(headerString)
   const { offset, size: payloadSize } = <FileMetadata>searchNodeFromPath(header, pathname)
+  console.log('headerSize', size, headerSize)
+  console.log('offset', offset, payloadSize)
   return buffer.slice(size + Number(offset) + 8, size + Number(offset) + payloadSize + 8)
 }
 
@@ -121,7 +123,7 @@ export type AsarHeader<T = false> = {
       : ListPackageMetadataReturn
 }
 
-const makeAsarHeader = <T extends boolean>(headerSize: number, buffers: Uint8Array[], flat: T) =>
+const makeAsarHeader = <T extends boolean>(headerSize: number, filesOffset: number, buffers: Uint8Array[], flat: T) =>
   new Blob(buffers)
     .arrayBuffer()
     .then(arrayBuffer => {
@@ -132,7 +134,8 @@ const makeAsarHeader = <T extends boolean>(headerSize: number, buffers: Uint8Arr
 
       return {
         headerSize,
-        header: listChilds({ flat, header, headerSize })
+        filesOffset,
+        header: listChilds({ flat, header, filesOffset })
       }
     })
 
@@ -140,20 +143,23 @@ export const getHeader =
   async <T extends ListPackageOptions>(bodyInit: BodyInit, options?: T): Promise<AsarHeader<T['flat']>> => {
     const reader = new Response(bodyInit).body.getReader()
 
-    const read = async (i = 0, headerSize?: number, buffers: Uint8Array[] = []) => {
+    const read = async (i = 0, headerSize?: number, filesOffset?: number, buffers: Uint8Array[] = []) => {
       if (headerSize && i >= headerSize) {
         await reader.cancel()
-        return makeAsarHeader(headerSize, buffers, options?.flat)
+        return makeAsarHeader(headerSize, filesOffset, buffers, options?.flat)
       }
 
       const { value, done } = await reader.read()
 
-      if (done) return makeAsarHeader(headerSize, buffers, options?.flat)
+      if (done) return makeAsarHeader(headerSize, filesOffset, buffers, options?.flat)
 
       return read(
         i + value.byteLength,
         i + value.byteLength >= 16
           ? headerSize ?? new DataView(value.buffer, 8, 16).getInt32(4, true)
+          : undefined,
+        i + value.byteLength >= 16
+          ? headerSize ?? new DataView(value.buffer).getUint32(4, true)
           : undefined,
         [...buffers, value]
       )
